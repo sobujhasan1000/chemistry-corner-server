@@ -27,7 +27,9 @@ async function run() {
     // Send a ping to confirm a successful connection
 
     const usersCollection = client.db("chemistryCorner").collection("users");
+    const loveStoriesCollection = client.db("chemistryCorner").collection("loveStories");
 
+    // ==============users db create====================
     app.post("/users", async (req, res) => {
       const user = req.body;
       const query = { email: user.email };
@@ -38,6 +40,12 @@ async function run() {
       const result = await usersCollection.insertOne(user);
       res.send(result);
     });
+
+    // ================= love stories get==========================
+    app.get('/loveStories',async(req,res)=>{
+      const result=await loveStoriesCollection.find().toArray();
+      res.send(result)
+    })
 
     await client.db("admin").command({ ping: 1 });
     console.log(
