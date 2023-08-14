@@ -60,13 +60,16 @@ async function run() {
     });
 
     app.get("/male", async (req, res) => {
-      const query = { gender: "male" };
+      const search = req.query.search || "";
+      const query = {
+        gender: "male",
+        name: { $regex: search, $options: "i" },
+      };
       const options = {
         projection: {
           _id: 1,
           photo: 1,
           name: 1,
-          
           age: 1,
           location: 1,
           bio: 1,
@@ -78,13 +81,16 @@ async function run() {
     });
 
     app.get("/female", async (req, res) => {
-      const query = { gender: "female" };
+      const search = req.query.search || "";
+      const query = {
+        gender: "female",
+        name: { $regex: search, $options: "i" },
+      };
       const options = {
         projection: {
           _id: 1,
           photo: 1,
           name: 1,
-          
           age: 1,
           location: 1,
           bio: 1,
@@ -96,13 +102,16 @@ async function run() {
     });
 
     app.get("/non-binary", async (req, res) => {
-      const query = { gender: "non-binary" };
+      const search = req.query.search || "";
+      const query = {
+        gender: "non-binary",
+        name: { $regex: search, $options: "i" },
+      };
       const options = {
         projection: {
           _id: 1,
           photo: 1,
           name: 1,
-          
           age: 1,
           location: 1,
           bio: 1,
