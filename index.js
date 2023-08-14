@@ -8,8 +8,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zjphxo3.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -28,7 +27,12 @@ async function run() {
     // Send a ping to confirm a successful connection
 
     const usersCollection = client.db("chemistryCorner").collection("users");
-    const loveStoriesCollection = client.db("chemistryCorner").collection("loveStories");
+    const loveStoriesCollection = client
+      .db("chemistryCorner")
+      .collection("loveStories");
+    const membersCollection = client
+      .db("chemistryCorner")
+      .collection("members");
 
     // ==============users db create====================
     app.post("/users", async (req, res) => {
@@ -43,10 +47,71 @@ async function run() {
     });
 
     // ================= love stories get==========================
-    app.get('/loveStories',async(req,res)=>{
-      const result=await loveStoriesCollection.find().toArray();
-      res.send(result)
-    })
+    app.get("/loveStories", async (req, res) => {
+      const result = await loveStoriesCollection.find().toArray();
+      res.send(result);
+    });
+
+    // ============= all members ==================
+    app.get("/members", async (req, res) => {
+      const cursor = membersCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get("/male", async (req, res) => {
+      const query = { gender: "male" };
+      const options = {
+        projection: {
+          _id: 1,
+          photo: 1,
+          name: 1,
+          
+          age: 1,
+          location: 1,
+          bio: 1,
+        },
+      };
+      const cursor = membersCollection.find(query, options).limit(4);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get("/female", async (req, res) => {
+      const query = { gender: "female" };
+      const options = {
+        projection: {
+          _id: 1,
+          photo: 1,
+          name: 1,
+          
+          age: 1,
+          location: 1,
+          bio: 1,
+        },
+      };
+      const cursor = membersCollection.find(query, options).limit(4);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    app.get("/non-binary", async (req, res) => {
+      const query = { gender: "non-binary" };
+      const options = {
+        projection: {
+          _id: 1,
+          photo: 1,
+          name: 1,
+          
+          age: 1,
+          location: 1,
+          bio: 1,
+        },
+      };
+      const cursor = membersCollection.find(query, options).limit(4);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
