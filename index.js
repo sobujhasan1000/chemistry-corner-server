@@ -46,7 +46,28 @@ async function run() {
       res.send(result);
     });
 
-    // ================= love stories get==========================
+    // ===========update a user profile===============
+    app.put("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const userInfo = req.body;
+      const query = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: userInfo,
+      };
+      const result = await usersCollection.updateOne(query, updateDoc, options);
+      res.send(result);
+    });
+
+    // ==============Get user===============
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await usersCollection.findOne(query);
+      res.send(result);
+    });
+
+    // ================= love stories get================
     app.get("/loveStories", async (req, res) => {
       const result = await loveStoriesCollection.find().toArray();
       res.send(result);
