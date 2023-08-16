@@ -74,16 +74,17 @@ async function run() {
     });
 
     // ============= all members ==================
+    // app.get("/members", async (req, res) => {
+    //   const cursor = membersCollection.find();
+    //   const result = await cursor.toArray();
+    //   res.send(result);
+    // });
+
     app.get("/members", async (req, res) => {
-      const cursor = membersCollection.find();
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-
-    app.get("/male", async (req, res) => {
+      const gender = req.query.gender;
       const search = req.query.search || "";
-      const query = {
-        gender: "male",
+      const filter = {
+        gender: gender,
         name: { $regex: search, $options: "i" },
       };
       const options = {
@@ -96,50 +97,7 @@ async function run() {
           bio: 1,
         },
       };
-      const cursor = membersCollection.find(query, options).limit(4);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-
-    app.get("/female", async (req, res) => {
-      const search = req.query.search || "";
-      const query = {
-        gender: "female",
-        name: { $regex: search, $options: "i" },
-      };
-      const options = {
-        projection: {
-          _id: 1,
-          photo: 1,
-          name: 1,
-          age: 1,
-          location: 1,
-          bio: 1,
-        },
-      };
-      const cursor = membersCollection.find(query, options).limit(4);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-
-    app.get("/non-binary", async (req, res) => {
-      const search = req.query.search || "";
-      const query = {
-        gender: "non-binary",
-        name: { $regex: search, $options: "i" },
-      };
-      const options = {
-        projection: {
-          _id: 1,
-          photo: 1,
-          name: 1,
-          age: 1,
-          location: 1,
-          bio: 1,
-        },
-      };
-      const cursor = membersCollection.find(query, options).limit(4);
-      const result = await cursor.toArray();
+      const result = await membersCollection.find(filter, options).toArray();
       res.send(result);
     });
 
