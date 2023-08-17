@@ -73,6 +73,7 @@ async function run() {
       res.send(result);
     });
 
+    // =========index for search by name in members==========
     const indexKeys = { name: 1 };
     const indexOptions = { name: "userName" };
     const result = await membersCollection.createIndex(indexKeys, indexOptions);
@@ -86,6 +87,7 @@ async function run() {
       res.send(result);
     });
 
+    // ========get members api============
     app.get("/members", async (req, res) => {
       let query = {};
       const gender = req.query.gender;
