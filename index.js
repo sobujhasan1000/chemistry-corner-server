@@ -73,20 +73,27 @@ async function run() {
       res.send(result);
     });
 
-    // ============= all members ==================
-    // app.get("/members", async (req, res) => {
-    //   const cursor = membersCollection.find();
-    //   const result = await cursor.toArray();
-    //   res.send(result);
-    // });
+    const indexKeys = { name: 1 };
+    const indexOptions = { name: "userName" };
+    const result = await membersCollection.createIndex(indexKeys, indexOptions);
+    app.get("/membersSearchByName/:text", async (req, res) => {
+      const searchText = req.params.text;
+      const result = await membersCollection
+        .find({
+          $or: [{ name: { $regex: searchText, $options: "i" } }],
+        })
+        .toArray();
+      res.send(result);
+    });
 
     app.get("/members", async (req, res) => {
+      let query = {};
       const gender = req.query.gender;
-      const search = req.query.search || "";
-      const filter = {
-        gender: gender,
-        name: { $regex: search, $options: "i" },
-      };
+      if (req.query.gender) {
+        query = {
+          gender: gender,
+        };
+      }
       const options = {
         projection: {
           _id: 1,
@@ -97,7 +104,7 @@ async function run() {
           bio: 1,
         },
       };
-      const result = await membersCollection.find(filter, options).toArray();
+      const result = await membersCollection.find(query, options).toArray();
       res.send(result);
     });
 
