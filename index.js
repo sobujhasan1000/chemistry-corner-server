@@ -87,6 +87,21 @@ async function run() {
       res.send(result);
     });
 
+    // ==========index for search by locations=========
+    const result2 = await membersCollection.createIndex(
+      { location: 1 },
+      { location: "userLocation" }
+    );
+    app.get("/membersSearchByLocation/:text", async (req, res) => {
+      const searchText = req.params.text;
+      const result = await membersCollection
+        .find({
+          $or: [{ location: { $regex: searchText, $options: "i" } }],
+        })
+        .toArray();
+      res.send(result);
+    });
+
     // ========get members api============
     app.get("/members", async (req, res) => {
       let query = {};
