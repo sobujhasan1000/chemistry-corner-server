@@ -75,7 +75,9 @@ async function run() {
 
     // ============= all members ==================
     app.get("/members", async (req, res) => {
-      const cursor = membersCollection.find();
+      const search = req.query.search;
+      const query = {location: { $regex: search, $options: "i" }};
+      const cursor = membersCollection.find(query);
       const result = await cursor.toArray();
       res.send(result);
     });
