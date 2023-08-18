@@ -73,21 +73,44 @@ async function run() {
       res.send(result);
     });
 
-    // ============= all members ==================
+    // =========index for search by name in members==========
+    const indexKeys = { name: 1 };
+    const indexOptions = { name: "userName" };
+    const result = await membersCollection.createIndex(indexKeys, indexOptions);
+    app.get("/membersSearchByName/:text", async (req, res) => {
+      const searchText = req.params.text;
+      const result = await membersCollection
+        .find({
+          $or: [{ name: { $regex: searchText, $options: "i" } }],
+        })
+        .toArray();
+      res.send(result);
+    });
+
+    // ==========index for search by locations=========
+    const result2 = await membersCollection.createIndex(
+      { location: 1 },
+      { location: "userLocation" }
+    );
+    app.get("/membersSearchByLocation/:text", async (req, res) => {
+      const searchText = req.params.text;
+      const result = await membersCollection
+        .find({
+          $or: [{ location: { $regex: searchText, $options: "i" } }],
+        })
+        .toArray();
+      res.send(result);
+    });
+
+    // ========get members api============
     app.get("/members", async (req, res) => {
-      const search = req.query.search;
-      const query = { location: { $regex: search, $options: "i" } };
-      const cursor = membersCollection.find(query);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-
-    app.get("/male", async (req, res) => {
-      const search = req.query.search || "";
-      const query = {
-        gender: "male",
-        name: { $regex: search, $options: "i" },
-      };
+      let query = {};
+      const gender = req.query.gender;
+      if (req.query.gender) {
+        query = {
+          gender: gender,
+        };
+      }
       const options = {
         projection: {
           _id: 1,
@@ -98,50 +121,7 @@ async function run() {
           bio: 1,
         },
       };
-      const cursor = membersCollection.find(query, options).limit(4);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-
-    app.get("/female", async (req, res) => {
-      const search = req.query.search || "";
-      const query = {
-        gender: "female",
-        name: { $regex: search, $options: "i" },
-      };
-      const options = {
-        projection: {
-          _id: 1,
-          photo: 1,
-          name: 1,
-          age: 1,
-          location: 1,
-          bio: 1,
-        },
-      };
-      const cursor = membersCollection.find(query, options).limit(4);
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-
-    app.get("/non-binary", async (req, res) => {
-      const search = req.query.search || "";
-      const query = {
-        gender: "non-binary",
-        name: { $regex: search, $options: "i" },
-      };
-      const options = {
-        projection: {
-          _id: 1,
-          photo: 1,
-          name: 1,
-          age: 1,
-          location: 1,
-          bio: 1,
-        },
-      };
-      const cursor = membersCollection.find(query, options).limit(4);
-      const result = await cursor.toArray();
+      const result = await membersCollection.find(query, options).toArray();
       res.send(result);
     });
 

@@ -9,8 +9,13 @@
     "routes": [
         {
             "src": "/(.*)",
+<<<<<<< HEAD
             "dest": "/",
             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+=======
+            "dest": "/", 
+            "methods": ["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
+>>>>>>> 328c628e760c12028769af4960babde7e984e12f
         }
     ]
 }
