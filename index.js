@@ -33,6 +33,7 @@ async function run() {
     const membersCollection = client
       .db("chemistryCorner")
       .collection("members");
+    const notesCollection = client.db("chemistryCorner").collection("notes");
 
     // ==============users db create====================
     app.post("/users", async (req, res) => {
@@ -150,6 +151,12 @@ async function run() {
         },
       };
       const result = await membersCollection.find(query, options).toArray();
+      res.send(result);
+    });
+
+    app.post("/contact-us", async (req, res) => {
+      const contactInfo = req.body;
+      const result = await notesCollection.insertOne(contactInfo);
       res.send(result);
     });
 
