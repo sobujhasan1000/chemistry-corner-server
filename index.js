@@ -34,6 +34,9 @@ async function run() {
       .db("chemistryCorner")
       .collection("members");
     const notesCollection = client.db("chemistryCorner").collection("notes");
+    const newsletterCollection = client
+      .db("chemistryCorner")
+      .collection("newsletter");
 
     // ==============users db create====================
     app.post("/users", async (req, res) => {
@@ -166,6 +169,12 @@ async function run() {
     app.post("/contact-us", async (req, res) => {
       const contactInfo = req.body;
       const result = await notesCollection.insertOne(contactInfo);
+      res.send(result);
+    });
+    // ======== get and post newsletter api =============
+    app.post("/newsletter", async (req, res) => {
+      const newsletter = req.body;
+      const result = await newsletterCollection.insertOne(newsletter);
       res.send(result);
     });
 
