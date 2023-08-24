@@ -8,7 +8,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zjphxo3.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -33,6 +33,10 @@ async function run() {
     const membersCollection = client
       .db("chemistryCorner")
       .collection("members");
+    const notesCollection = client.db("chemistryCorner").collection("notes");
+    const newsletterCollection = client
+      .db("chemistryCorner")
+      .collection("newsletter");
 
     // ==============users db create====================
     app.post("/users", async (req, res) => {
@@ -153,10 +157,29 @@ async function run() {
       res.send(result);
     });
 
+    // ======== get single member api =============
+
+    app.get("/member/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await membersCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.post("/contact-us", async (req, res) => {
+      const contactInfo = req.body;
+      const result = await notesCollection.insertOne(contactInfo);
+      res.send(result);
+    });
+    // ======== get and post newsletter api =============
+    app.post("/newsletter", async (req, res) => {
+      const newsletter = req.body;
+      const result = await newsletterCollection.insertOne(newsletter);
+      res.send(result);
+    });
+
     await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    console.log("Connected to MongoDB ✅");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -165,9 +188,9 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("chemistry corner test runing");
+  res.send("chemistry corner is running");
 });
 
 app.listen(port, () => {
-  console.log(`chemistry corner is runing on port ${port}`);
+  console.log(`chemistry corner is running on port ☣️ ${port}`);
 });
