@@ -102,6 +102,34 @@ async function run() {
       res.send(result);
     });
 
+    // =============index for complex search==============
+    const result3 = await membersCollection.createIndex(
+      { age: 1 },
+      { age: "age" }
+    );
+    const result4 = await membersCollection.createIndex(
+      { gender: 1 },
+      { gender: "gender" }
+    );
+    app.get("/find-your-partner", async (req, res) => {
+      let query = {};
+      const gender = req.query.gender;
+      const minAge = parseInt(req.query.minAge);
+      const maxAge = parseInt(req.query.maxAge);
+      const location = req.query.location;
+      if (req.query.gender) {
+        query.gender = gender;
+      }
+      if (req.query.minAge && req.query.maxAge) {
+        query.age = { $gte: minAge, $lte: maxAge };
+      }
+      if (req.query.location) {
+        query.location = location;
+      }
+      const result = await membersCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // ========get members api============
     app.get("/members", async (req, res) => {
       let query = {};
