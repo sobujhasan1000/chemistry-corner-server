@@ -1,4 +1,5 @@
 const express = require("express");
+const SSLCommerzPayment = require("sslcommerz-lts");
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
@@ -19,6 +20,10 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+const store_id = process.env.STORE_ID;
+const store_passwd = process.env.STORE_PASS;
+const is_live = false; //true for live, false for sandbox
 
 async function run() {
   try {
@@ -63,6 +68,19 @@ async function run() {
       res.send(result);
     });
 
+    // ========get all users api============
+    app.get("/users", async (req, res) => {
+      let query = {};
+      const gender = req.query.gender;
+      if (req.query.gender) {
+        query = {
+          gender: gender,
+        };
+      }
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // ==============Get user===============
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
@@ -81,9 +99,9 @@ async function run() {
     const indexKeys = { name: 1 };
     const indexOptions = { name: "userName" };
     const result = await membersCollection.createIndex(indexKeys, indexOptions);
-    app.get("/membersSearchByName/:text", async (req, res) => {
+    app.get("/usersSearchByName/:text", async (req, res) => {
       const searchText = req.params.text;
-      const result = await membersCollection
+      const result = await usersCollection
         .find({
           $or: [{ name: { $regex: searchText, $options: "i" } }],
         })
@@ -96,11 +114,11 @@ async function run() {
       { location: 1 },
       { location: "userLocation" }
     );
-    app.get("/membersSearchByLocation/:text", async (req, res) => {
+    app.get("/usersSearchByLocation/:text", async (req, res) => {
       const searchText = req.params.text;
-      const result = await membersCollection
+      const result = await usersCollection
         .find({
-          $or: [{ location: { $regex: searchText, $options: "i" } }],
+          $or: [{ country: { $regex: searchText, $options: "i" } }],
         })
         .toArray();
       res.send(result);
@@ -120,7 +138,7 @@ async function run() {
       const gender = req.query.gender;
       const minAge = parseInt(req.query.minAge);
       const maxAge = parseInt(req.query.maxAge);
-      const location = req.query.location;
+      const country = req.query.country;
       if (req.query.gender) {
         query.gender = gender;
       }
@@ -128,32 +146,9 @@ async function run() {
         query.age = { $gte: minAge, $lte: maxAge };
       }
       if (req.query.location) {
-        query.location = location;
+        query.country = country;
       }
-      const result = await membersCollection.find(query).toArray();
-      res.send(result);
-    });
-
-    // ========get members api============
-    app.get("/members", async (req, res) => {
-      let query = {};
-      const gender = req.query.gender;
-      if (req.query.gender) {
-        query = {
-          gender: gender,
-        };
-      }
-      const options = {
-        projection: {
-          _id: 1,
-          photo: 1,
-          name: 1,
-          age: 1,
-          location: 1,
-          bio: 1,
-        },
-      };
-      const result = await membersCollection.find(query, options).toArray();
+      const result = await usersCollection.find(query).toArray();
       res.send(result);
     });
 
