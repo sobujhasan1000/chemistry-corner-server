@@ -162,7 +162,7 @@ async function run() {
       res.send(result);
     });
 
-    // ==========save order in db================
+    // ==========save order in db=================
     app.post("/orders", async (req, res) => {
       const orderInfo = req.body;
       orderInfo.price = parseFloat(req.body.price);
