@@ -125,7 +125,7 @@ async function run() {
       res.send(result);
     });
 
-    // =============index for complex search==============
+    // =============index for complex search  (simanto 1)============== 
     const result3 = await membersCollection.createIndex(
       { age: 1 },
       { age: "age" }
