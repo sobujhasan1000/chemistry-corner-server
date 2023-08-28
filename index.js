@@ -39,6 +39,7 @@ async function run() {
       .db("chemistryCorner")
       .collection("members");
     const notesCollection = client.db("chemistryCorner").collection("notes");
+    const ordersCollection = client.db("chemistryCorner").collection("orders");
     const newsletterCollection = client
       .db("chemistryCorner")
       .collection("newsletter");
@@ -159,6 +160,89 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await membersCollection.findOne(query);
       res.send(result);
+    });
+
+    // ==========save order in db================
+    app.post("/orders", async (req, res) => {
+      const orderInfo = req.body;
+      orderInfo.price = parseFloat(req.body.price);
+      orderInfo.currency = req.body.currency.toUpperCase();
+      const transactionId = new ObjectId().toString();
+      const data = {
+        total_amount: orderInfo?.price,
+        currency: orderInfo.currency,
+        tran_id: transactionId, // use unique tran_id for each api call
+        success_url: `${process.env.SERVER_API_URL}/payment/success/${transactionId}`,
+        fail_url: `${process.env.SERVER_API_URL}/payment/fail/${transactionId}`,
+        cancel_url: `${process.env.SERVER_API_URL}/payment/cancel/${transactionId}`,
+        ipn_url: "http://localhost:3030/ipn",
+        shipping_method: "Courier",
+        product_name: "Computer.",
+        product_category: "Electronic",
+        product_profile: "general",
+        cus_name: orderInfo.name,
+        cus_email: orderInfo.email,
+        cus_add1: orderInfo.address,
+        cus_add2: "Dhaka",
+        cus_city: "Dhaka",
+        cus_state: "Dhaka",
+        cus_postcode: orderInfo.postCode,
+        cus_country: "Bangladesh",
+        cus_phone: orderInfo.phone,
+        cus_fax: "01711111111",
+        ship_name: "Customer Name",
+        ship_add1: "Dhaka",
+        ship_add2: "Dhaka",
+        ship_city: "Dhaka",
+        ship_state: "Dhaka",
+        ship_postcode: 1000,
+        ship_country: "Bangladesh",
+      };
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+      sslcz.init(data).then((apiResponse) => {
+        // Redirect the user to payment gateway
+        let GatewayPageURL = apiResponse.GatewayPageURL;
+        res.send({ url: GatewayPageURL });
+        console.log("Redirecting to: ", GatewayPageURL);
+        orderInfo.transactionId = transactionId;
+        orderInfo.paidStatus = false;
+        const result = ordersCollection.insertOne(orderInfo);
+      });
+
+      app.post("/payment/success/:tranId", async (req, res) => {
+        const result = await ordersCollection.updateOne(
+          {
+            transactionId: req.params.tranId,
+          },
+          { $set: { paidStatus: true } }
+        );
+        if (result.modifiedCount > 0) {
+          res.redirect(
+            `${process.env.CLIENT_API_URL}/payment/success/${req.params.tranId}`
+          );
+        }
+      });
+
+      app.post("/payment/fail/:tranId", async (req, res) => {
+        const result = await ordersCollection.deleteOne({
+          transactionId: req.params.tranId,
+        });
+        if (result.deletedCount) {
+          res.redirect(
+            `${process.env.CLIENT_API_URL}/payment/fail/${req.params.tranId}`
+          );
+        }
+      });
+      app.post("/payment/cancel/:tranId", async (req, res) => {
+        const result = await ordersCollection.deleteOne({
+          transactionId: req.params.tranId,
+        });
+        if (result.deletedCount) {
+          res.redirect(
+            `${process.env.CLIENT_API_URL}/payment/cancel/${req.params.tranId}`
+          );
+        }
+      });
     });
 
     app.post("/contact-us", async (req, res) => {
