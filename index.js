@@ -1,4 +1,5 @@
 const express = require("express");
+const SSLCommerzPayment = require("sslcommerz-lts");
 const app = express();
 const cors = require("cors");
 require("dotenv").config();
@@ -20,6 +21,10 @@ const client = new MongoClient(uri, {
   },
 });
 
+const store_id = process.env.STORE_ID;
+const store_passwd = process.env.STORE_PASS;
+const is_live = false; //true for live, false for sandbox
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -34,6 +39,7 @@ async function run() {
       .db("chemistryCorner")
       .collection("members");
     const notesCollection = client.db("chemistryCorner").collection("notes");
+    const ordersCollection = client.db("chemistryCorner").collection("orders");
     const newsletterCollection = client
       .db("chemistryCorner")
       .collection("newsletter");
@@ -63,6 +69,19 @@ async function run() {
       res.send(result);
     });
 
+    // ========get all users api============
+    app.get("/users", async (req, res) => {
+      let query = {};
+      const gender = req.query.gender;
+      if (req.query.gender) {
+        query = {
+          gender: gender,
+        };
+      }
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // ==============Get user===============
     app.get("/users/:email", async (req, res) => {
       const email = req.params.email;
@@ -81,9 +100,9 @@ async function run() {
     const indexKeys = { name: 1 };
     const indexOptions = { name: "userName" };
     const result = await membersCollection.createIndex(indexKeys, indexOptions);
-    app.get("/membersSearchByName/:text", async (req, res) => {
+    app.get("/usersSearchByName/:text", async (req, res) => {
       const searchText = req.params.text;
-      const result = await membersCollection
+      const result = await usersCollection
         .find({
           $or: [{ name: { $regex: searchText, $options: "i" } }],
         })
@@ -96,11 +115,11 @@ async function run() {
       { location: 1 },
       { location: "userLocation" }
     );
-    app.get("/membersSearchByLocation/:text", async (req, res) => {
+    app.get("/usersSearchByLocation/:text", async (req, res) => {
       const searchText = req.params.text;
-      const result = await membersCollection
+      const result = await usersCollection
         .find({
-          $or: [{ location: { $regex: searchText, $options: "i" } }],
+          $or: [{ country: { $regex: searchText, $options: "i" } }],
         })
         .toArray();
       res.send(result);
@@ -120,7 +139,7 @@ async function run() {
       const gender = req.query.gender;
       const minAge = parseInt(req.query.minAge);
       const maxAge = parseInt(req.query.maxAge);
-      const location = req.query.location;
+      const country = req.query.country;
       if (req.query.gender) {
         query.gender = gender;
       }
@@ -128,32 +147,9 @@ async function run() {
         query.age = { $gte: minAge, $lte: maxAge };
       }
       if (req.query.location) {
-        query.location = location;
+        query.country = country;
       }
-      const result = await membersCollection.find(query).toArray();
-      res.send(result);
-    });
-
-    // ========get members api============
-    app.get("/members", async (req, res) => {
-      let query = {};
-      const gender = req.query.gender;
-      if (req.query.gender) {
-        query = {
-          gender: gender,
-        };
-      }
-      const options = {
-        projection: {
-          _id: 1,
-          photo: 1,
-          name: 1,
-          age: 1,
-          location: 1,
-          bio: 1,
-        },
-      };
-      const result = await membersCollection.find(query, options).toArray();
+      const result = await usersCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -164,6 +160,89 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await membersCollection.findOne(query);
       res.send(result);
+    });
+
+    // ==========save order in db================
+    app.post("/orders", async (req, res) => {
+      const orderInfo = req.body;
+      orderInfo.price = parseFloat(req.body.price);
+      orderInfo.currency = req.body.currency.toUpperCase();
+      const transactionId = new ObjectId().toString();
+      const data = {
+        total_amount: orderInfo?.price,
+        currency: orderInfo.currency,
+        tran_id: transactionId, // use unique tran_id for each api call
+        success_url: `${process.env.SERVER_API_URL}/payment/success/${transactionId}`,
+        fail_url: `${process.env.SERVER_API_URL}/payment/fail/${transactionId}`,
+        cancel_url: `${process.env.SERVER_API_URL}/payment/cancel/${transactionId}`,
+        ipn_url: "http://localhost:3030/ipn",
+        shipping_method: "Courier",
+        product_name: "Computer.",
+        product_category: "Electronic",
+        product_profile: "general",
+        cus_name: orderInfo.name,
+        cus_email: orderInfo.email,
+        cus_add1: orderInfo.address,
+        cus_add2: "Dhaka",
+        cus_city: "Dhaka",
+        cus_state: "Dhaka",
+        cus_postcode: orderInfo.postCode,
+        cus_country: "Bangladesh",
+        cus_phone: orderInfo.phone,
+        cus_fax: "01711111111",
+        ship_name: "Customer Name",
+        ship_add1: "Dhaka",
+        ship_add2: "Dhaka",
+        ship_city: "Dhaka",
+        ship_state: "Dhaka",
+        ship_postcode: 1000,
+        ship_country: "Bangladesh",
+      };
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+      sslcz.init(data).then((apiResponse) => {
+        // Redirect the user to payment gateway
+        let GatewayPageURL = apiResponse.GatewayPageURL;
+        res.send({ url: GatewayPageURL });
+        console.log("Redirecting to: ", GatewayPageURL);
+        orderInfo.transactionId = transactionId;
+        orderInfo.paidStatus = false;
+        const result = ordersCollection.insertOne(orderInfo);
+      });
+
+      app.post("/payment/success/:tranId", async (req, res) => {
+        const result = await ordersCollection.updateOne(
+          {
+            transactionId: req.params.tranId,
+          },
+          { $set: { paidStatus: true } }
+        );
+        if (result.modifiedCount > 0) {
+          res.redirect(
+            `${process.env.CLIENT_API_URL}/payment/success/${req.params.tranId}`
+          );
+        }
+      });
+
+      app.post("/payment/fail/:tranId", async (req, res) => {
+        const result = await ordersCollection.deleteOne({
+          transactionId: req.params.tranId,
+        });
+        if (result.deletedCount) {
+          res.redirect(
+            `${process.env.CLIENT_API_URL}/payment/fail/${req.params.tranId}`
+          );
+        }
+      });
+      app.post("/payment/cancel/:tranId", async (req, res) => {
+        const result = await ordersCollection.deleteOne({
+          transactionId: req.params.tranId,
+        });
+        if (result.deletedCount) {
+          res.redirect(
+            `${process.env.CLIENT_API_URL}/payment/cancel/${req.params.tranId}`
+          );
+        }
+      });
     });
 
     app.post("/contact-us", async (req, res) => {
