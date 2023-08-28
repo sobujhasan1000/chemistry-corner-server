@@ -125,7 +125,7 @@ async function run() {
       res.send(result);
     });
 
-    // =============index for complex search  (simanto 1)============== 
+    // =============index for complex search  (simanto 1)==============
     const result3 = await membersCollection.createIndex(
       { age: 1 },
       { age: "age" }
@@ -166,6 +166,7 @@ async function run() {
     app.post("/orders", async (req, res) => {
       const orderInfo = req.body;
       orderInfo.price = parseFloat(req.body.price);
+      console.log("orderInfo", orderInfo);
       orderInfo.currency = req.body.currency.toUpperCase();
       const transactionId = new ObjectId().toString();
       const data = {
