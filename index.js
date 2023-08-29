@@ -163,10 +163,11 @@ async function run() {
       res.send(result);
     });
 
-    // ==========save order in db================
+    // ==========save order in db=================
     app.post("/orders", async (req, res) => {
       const orderInfo = req.body;
       orderInfo.price = parseFloat(req.body.price);
+      console.log("orderInfo", orderInfo);
       orderInfo.currency = req.body.currency.toUpperCase();
       const transactionId = new ObjectId().toString();
       const data = {
