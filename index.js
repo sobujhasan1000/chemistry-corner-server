@@ -47,6 +47,9 @@ async function run() {
       .db("chemistryCorner")
       .collection("newsletter");
     const blogsCollection = client.db("chemistryCorner").collection("blogs");
+    const feedbackCollection = client
+      .db("chemistryCorner")
+      .collection("feedbacks");
 
     // ==============users db create====================
     app.post("/users", async (req, res) => {
@@ -289,8 +292,20 @@ async function run() {
       const result = await newsletterCollection.insertOne(newsletter);
       res.send(result);
     });
-    
-// 
+
+    // ======== get and post feedbacks api =============
+    app.get("/feedbacks", async (req, res) => {
+      const result = await feedbackCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.post("/feedbacks", async (req, res) => {
+      const feedback = req.body;
+      const result = await feedbackCollection.insertOne(feedback);
+      res.send(result);
+    });
+
+    //
     app.post("/blogs", async (req, res) => {
       const blogData = req.body;
       const result = await blogsCollection.insertOne(blogData);
