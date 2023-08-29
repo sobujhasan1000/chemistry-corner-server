@@ -1,10 +1,10 @@
 const express = require("express");
 const SSLCommerzPayment = require("sslcommerz-lts");
 const app = express();
+const multer = require("multer");
 const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
-
 // ================= middleware =====================
 app.use(cors());
 app.use(express.json());
@@ -43,6 +43,7 @@ async function run() {
     const newsletterCollection = client
       .db("chemistryCorner")
       .collection("newsletter");
+    const blogsCollection = client.db("chemistryCorner").collection("blogs");
 
     // ==============users db create====================
     app.post("/users", async (req, res) => {
@@ -125,7 +126,7 @@ async function run() {
       res.send(result);
     });
 
-    // =============index for complex search  (simanto 1)============== 
+    // =============index for complex search  (simanto 1)==============
     const result3 = await membersCollection.createIndex(
       { age: 1 },
       { age: "age" }
@@ -255,6 +256,53 @@ async function run() {
       const newsletter = req.body;
       const result = await newsletterCollection.insertOne(newsletter);
       res.send(result);
+    });
+    // ========= get and post for blogs api =============
+    app.post("/blogs", multer().single("file"), async (req, res) => {
+      const { blog_heading, summary, category, description } = req.body;
+      const file = req.file;
+
+      try {
+        const db = client.db("chemistryCorner");
+        const collection = db.collection("blogs");
+
+        const author_name = req.user?.displayName;
+        const author_img = req.user?.photoURL;
+        const blog_time = new Date().toISOString();
+        const imageUploadResult = await imageUpload(file);
+        const upload_image = imageUploadResult?.data?.display_url;
+
+        const newBlog = {
+          blog_heading,
+          summary,
+          category,
+          description,
+          author_name,
+          author_img,
+          blog_time,
+          upload_image,
+        };
+
+        const result = await collection.insertOne(newBlog);
+        res.status(201).json(result);
+      } catch (error) {
+        console.error("Error creating blog:", error);
+        res.status(500).json({ error: "Failed to create blog" });
+      }
+    });
+
+    app.get("/blogs", async (req, res) => {
+      try {
+        await client.connect();
+        const db = client.db("chemistryCorner");
+        const collection = db.collection("blogs");
+
+        const blogs = await collection.find().toArray();
+        res.status(200).json(blogs);
+      } catch (error) {
+        console.error("Error fetching blogs:", error);
+        res.status(200).json({ message: "Success", data: result });
+      }
     });
 
     await client.db("admin").command({ ping: 1 });
