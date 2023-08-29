@@ -39,6 +39,9 @@ async function run() {
       .db("chemistryCorner")
       .collection("members");
     const notesCollection = client.db("chemistryCorner").collection("notes");
+    const favoritesCollection = client
+      .db("chemistryCorner")
+      .collection("favorites");
     const ordersCollection = client.db("chemistryCorner").collection("orders");
     const newsletterCollection = client
       .db("chemistryCorner")
@@ -246,6 +249,34 @@ async function run() {
       });
     });
 
+    // ============add to favorite=============
+    app.post("/favorites", async (req, res) => {
+      const favInfo = req.body;
+      const result = await favoritesCollection.insertOne(favInfo);
+      res.send(result);
+    });
+
+    // ============remove from favorite=============
+    app.delete("/favorites/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {
+        userId: id,
+      };
+      const result = await favoritesCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    //========get favorite using email=======
+    app.get("/favorites", async (req, res) => {
+      let query = {};
+      const email = req.query.email;
+      if (req.query.email) {
+        query = { email: email };
+      }
+      const result = await favoritesCollection.find(query).toArray();
+      res.send(result);
+    });
+    // ==========Contact Us==========
     app.post("/contact-us", async (req, res) => {
       const contactInfo = req.body;
       const result = await notesCollection.insertOne(contactInfo);
