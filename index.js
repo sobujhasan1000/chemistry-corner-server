@@ -1,9 +1,9 @@
 const express = require("express");
 const app = express();
+// const multer = require("multer");
 const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
-
 // ================= middleware =====================
 app.use(cors());
 app.use(express.json());
@@ -34,9 +34,14 @@ async function run() {
       .db("chemistryCorner")
       .collection("members");
     const notesCollection = client.db("chemistryCorner").collection("notes");
+    const favoritesCollection = client
+      .db("chemistryCorner")
+      .collection("favorites");
+    const ordersCollection = client.db("chemistryCorner").collection("orders");
     const newsletterCollection = client
       .db("chemistryCorner")
       .collection("newsletter");
+    const blogsCollection = client.db("chemistryCorner").collection("blogs");
 
     // ==============users db create====================
     app.post("/users", async (req, res) => {
@@ -107,6 +112,7 @@ async function run() {
     });
 
     // =============index for complex search ============== 
+    // =============index for complex search  (simanto 1)==============
     const result3 = await membersCollection.createIndex(
       { age: 1 },
       { age: "age" }
@@ -166,6 +172,118 @@ async function run() {
       res.send(result);
     });
 
+    // ==========save order in db=================
+    app.post("/orders", async (req, res) => {
+      const orderInfo = req.body;
+      orderInfo.price = parseFloat(req.body.price);
+      console.log("orderInfo", orderInfo);
+      orderInfo.currency = req.body.currency.toUpperCase();
+      const transactionId = new ObjectId().toString();
+      const data = {
+        total_amount: orderInfo?.price,
+        currency: orderInfo.currency,
+        tran_id: transactionId, // use unique tran_id for each api call
+        success_url: `${process.env.SERVER_API_URL}/payment/success/${transactionId}`,
+        fail_url: `${process.env.SERVER_API_URL}/payment/fail/${transactionId}`,
+        cancel_url: `${process.env.SERVER_API_URL}/payment/cancel/${transactionId}`,
+        ipn_url: "http://localhost:3030/ipn",
+        shipping_method: "Courier",
+        product_name: "Computer.",
+        product_category: "Electronic",
+        product_profile: "general",
+        cus_name: orderInfo.name,
+        cus_email: orderInfo.email,
+        cus_add1: orderInfo.address,
+        cus_add2: "Dhaka",
+        cus_city: "Dhaka",
+        cus_state: "Dhaka",
+        cus_postcode: orderInfo.postCode,
+        cus_country: "Bangladesh",
+        cus_phone: orderInfo.phone,
+        cus_fax: "01711111111",
+        ship_name: "Customer Name",
+        ship_add1: "Dhaka",
+        ship_add2: "Dhaka",
+        ship_city: "Dhaka",
+        ship_state: "Dhaka",
+        ship_postcode: 1000,
+        ship_country: "Bangladesh",
+      };
+      const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+      sslcz.init(data).then((apiResponse) => {
+        // Redirect the user to payment gateway
+        let GatewayPageURL = apiResponse.GatewayPageURL;
+        res.send({ url: GatewayPageURL });
+        console.log("Redirecting to: ", GatewayPageURL);
+        orderInfo.transactionId = transactionId;
+        orderInfo.paidStatus = false;
+        const result = ordersCollection.insertOne(orderInfo);
+      });
+
+      app.post("/payment/success/:tranId", async (req, res) => {
+        const result = await ordersCollection.updateOne(
+          {
+            transactionId: req.params.tranId,
+          },
+          { $set: { paidStatus: true } }
+        );
+        if (result.modifiedCount > 0) {
+          res.redirect(
+            `${process.env.CLIENT_API_URL}/payment/success/${req.params.tranId}`
+          );
+        }
+      });
+
+      app.post("/payment/fail/:tranId", async (req, res) => {
+        const result = await ordersCollection.deleteOne({
+          transactionId: req.params.tranId,
+        });
+        if (result.deletedCount) {
+          res.redirect(
+            `${process.env.CLIENT_API_URL}/payment/fail/${req.params.tranId}`
+          );
+        }
+      });
+      app.post("/payment/cancel/:tranId", async (req, res) => {
+        const result = await ordersCollection.deleteOne({
+          transactionId: req.params.tranId,
+        });
+        if (result.deletedCount) {
+          res.redirect(
+            `${process.env.CLIENT_API_URL}/payment/cancel/${req.params.tranId}`
+          );
+        }
+      });
+    });
+
+    // ============add to favorite=============
+    app.post("/favorites", async (req, res) => {
+      const favInfo = req.body;
+      const result = await favoritesCollection.insertOne(favInfo);
+      res.send(result);
+    });
+
+    // ============remove from favorite=============
+    app.delete("/favorites/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {
+        userId: id,
+      };
+      const result = await favoritesCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    //========get favorite using email=======
+    app.get("/favorites", async (req, res) => {
+      let query = {};
+      const email = req.query.email;
+      if (req.query.email) {
+        query = { email: email };
+      }
+      const result = await favoritesCollection.find(query).toArray();
+      res.send(result);
+    });
+    // ==========Contact Us==========
     app.post("/contact-us", async (req, res) => {
       const contactInfo = req.body;
       const result = await notesCollection.insertOne(contactInfo);
@@ -176,6 +294,27 @@ async function run() {
       const newsletter = req.body;
       const result = await newsletterCollection.insertOne(newsletter);
       res.send(result);
+    });
+    
+// 
+    app.post("/blogs", async (req, res) => {
+      const blogData = req.body;
+      const result = await blogsCollection.insertOne(blogData);
+      res.send(result);
+    });
+
+    app.get("/blogs", async (req, res) => {
+      try {
+        await client.connect();
+        const db = client.db("chemistryCorner");
+        const collection = db.collection("blogs");
+
+        const blogs = await collection.find().toArray();
+        res.status(200).json(blogs);
+      } catch (error) {
+        console.error("Error fetching blogs:", error);
+        res.status(200).json({ message: "Success", data: result });
+      }
     });
 
     await client.db("admin").command({ ping: 1 });
