@@ -1,7 +1,7 @@
 const express = require("express");
 const SSLCommerzPayment = require("sslcommerz-lts");
 const app = express();
-const multer = require("multer");
+// const multer = require("multer");
 const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
@@ -39,6 +39,9 @@ async function run() {
       .db("chemistryCorner")
       .collection("members");
     const notesCollection = client.db("chemistryCorner").collection("notes");
+    const favoritesCollection = client
+      .db("chemistryCorner")
+      .collection("favorites");
     const ordersCollection = client.db("chemistryCorner").collection("orders");
     const newsletterCollection = client
       .db("chemistryCorner")
@@ -247,6 +250,34 @@ async function run() {
       });
     });
 
+    // ============add to favorite=============
+    app.post("/favorites", async (req, res) => {
+      const favInfo = req.body;
+      const result = await favoritesCollection.insertOne(favInfo);
+      res.send(result);
+    });
+
+    // ============remove from favorite=============
+    app.delete("/favorites/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = {
+        userId: id,
+      };
+      const result = await favoritesCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    //========get favorite using email=======
+    app.get("/favorites", async (req, res) => {
+      let query = {};
+      const email = req.query.email;
+      if (req.query.email) {
+        query = { email: email };
+      }
+      const result = await favoritesCollection.find(query).toArray();
+      res.send(result);
+    });
+    // ==========Contact Us==========
     app.post("/contact-us", async (req, res) => {
       const contactInfo = req.body;
       const result = await notesCollection.insertOne(contactInfo);
@@ -258,38 +289,12 @@ async function run() {
       const result = await newsletterCollection.insertOne(newsletter);
       res.send(result);
     });
-    // ========= get and post for blogs api =============
-    app.post("/blogs", multer().single("file"), async (req, res) => {
-      const { blog_heading, summary, category, description } = req.body;
-      const file = req.file;
-
-      try {
-        const db = client.db("chemistryCorner");
-        const collection = db.collection("blogs");
-
-        const author_name = req.user?.displayName;
-        const author_img = req.user?.photoURL;
-        const blog_time = new Date().toISOString();
-        const imageUploadResult = await imageUpload(file);
-        const upload_image = imageUploadResult?.data?.display_url;
-
-        const newBlog = {
-          blog_heading,
-          summary,
-          category,
-          description,
-          author_name,
-          author_img,
-          blog_time,
-          upload_image,
-        };
-
-        const result = await collection.insertOne(newBlog);
-        res.status(201).json(result);
-      } catch (error) {
-        console.error("Error creating blog:", error);
-        res.status(500).json({ error: "Failed to create blog" });
-      }
+    
+// 
+    app.post("/blogs", async (req, res) => {
+      const blogData = req.body;
+      const result = await blogsCollection.insertOne(blogData);
+      res.send(result);
     });
 
     app.get("/blogs", async (req, res) => {
