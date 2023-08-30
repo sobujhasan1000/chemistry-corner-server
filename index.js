@@ -42,6 +42,7 @@ async function run() {
     const favoritesCollection = client
       .db("chemistryCorner")
       .collection("favorites");
+    const likesCollection = client.db("chemistryCorner").collection("likes");
     const ordersCollection = client.db("chemistryCorner").collection("orders");
     const newsletterCollection = client
       .db("chemistryCorner")
@@ -165,7 +166,7 @@ async function run() {
     app.get("/member/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const result = await membersCollection.findOne(query);
+      const result = await usersCollection.findOne(query);
       res.send(result);
     });
 
@@ -280,12 +281,70 @@ async function run() {
       const result = await favoritesCollection.find(query).toArray();
       res.send(result);
     });
+
+    // =========likes==========
+    app.put("/updateLikes/:id", async (req, res) => {
+      const userInfo = req.body;
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const user = await usersCollection.findOne(query);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      if (!user.likes) {
+        user.likes = 0;
+      }
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: {
+          likes: parseInt(user.likes) + 1,
+        },
+      };
+      const updatedResult = await usersCollection.updateOne(
+        query,
+        updatedDoc,
+        options
+      );
+      const insertedResult = await likesCollection.insertOne(userInfo);
+      res.send({ updatedResult, insertedResult });
+    });
+
+    app.patch("/removeLikes/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const user = await usersCollection.findOne(query);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const updatedDoc = {
+        $set: {
+          likes: parseInt(user.likes) - 1,
+        },
+      };
+      const modifiedResult = await usersCollection.updateOne(query, updatedDoc);
+      const deletedResult = await likesCollection.deleteOne({ userId: id });
+      res.send({ modifiedResult, deletedResult });
+    });
+
+    //========get likes using email=======
+    app.get("/likes", async (req, res) => {
+      let query = {};
+      const email = req.query.email;
+      if (req.query.email) {
+        query = { email: email };
+      }
+      const result = await likesCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // ==========Contact Us==========
     app.post("/contact-us", async (req, res) => {
       const contactInfo = req.body;
       const result = await notesCollection.insertOne(contactInfo);
       res.send(result);
     });
+
     // ======== get and post newsletter api =============
     app.post("/newsletter", async (req, res) => {
       const newsletter = req.body;
