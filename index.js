@@ -282,6 +282,22 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/favoriteList/:email", async (req, res) => {
+      const email = req.params.email;
+      const favoriteList = await favoritesCollection
+        .find({ email: email })
+        .toArray();
+      if (!favoriteList) {
+        res.send({ message: "favorites not found" });
+      }
+      const ids = favoriteList.map((item) => item.userId);
+      const query = { _id: { $in: ids.map((id) => new ObjectId(id)) } };
+      console.log(query);
+
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // =========likes==========
     app.put("/updateLikes/:id", async (req, res) => {
       const userInfo = req.body;
