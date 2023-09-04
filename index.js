@@ -98,6 +98,19 @@ async function run() {
       res.send(result);
     });
 
+    // ===========update a user role===============
+    app.put("/users/role/:email", async (req, res) => {
+      const email = req.params.email;
+      const role = req.body;
+      const query = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: { role: role },
+      };
+      const result = await usersCollection.updateOne(query, updateDoc, options);
+      res.send(result);
+    });
+
     // ================= love stories get================
     app.get("/loveStories", async (req, res) => {
       const result = await loveStoriesCollection.find().toArray();
