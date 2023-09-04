@@ -385,6 +385,12 @@ async function run() {
       res.send(result);
     });
 
+    // ======== get notes api =============
+    app.get("/contact-us", async (req, res) => {
+      const result = await notesCollection.find().toArray();
+      res.send(result);
+    });
+
     // ======== get and post newsletter api =============
     app.post("/newsletter", async (req, res) => {
       const newsletter = req.body;
