@@ -410,27 +410,20 @@ async function run() {
       res.send(result);
     });
 
-    //
+    //=======post blogs==========
     app.post("/blogs", async (req, res) => {
       const blogData = req.body;
       const result = await blogsCollection.insertOne(blogData);
       res.send(result);
     });
 
+    // ===========get all blogs===============
     app.get("/blogs", async (req, res) => {
-      try {
-        await client.connect();
-        const db = client.db("chemistryCorner");
-        const collection = db.collection("blogs");
-
-        const blogs = await collection.find().toArray();
-        res.status(200).json(blogs);
-      } catch (error) {
-        console.error("Error fetching blogs:", error);
-        res.status(200).json({ message: "Success", data: result });
-      }
+      const result = await blogsCollection.find().toArray();
+      res.send(result);
     });
 
+    // ======get a blog by id============
     app.get("/blog/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
