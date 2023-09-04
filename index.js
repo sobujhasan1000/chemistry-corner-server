@@ -282,6 +282,7 @@ async function run() {
       res.send(result);
     });
 
+    // ==========get favorite list using email=========
     app.get("/favoriteList/:email", async (req, res) => {
       const email = req.params.email;
       const favoriteList = await favoritesCollection
@@ -292,8 +293,6 @@ async function run() {
       }
       const ids = favoriteList.map((item) => item.userId);
       const query = { _id: { $in: ids.map((id) => new ObjectId(id)) } };
-      console.log(query);
-
       const result = await usersCollection.find(query).toArray();
       res.send(result);
     });
@@ -351,6 +350,18 @@ async function run() {
         query = { email: email };
       }
       const result = await likesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get("/likesList/:email", async (req, res) => {
+      const email = req.params.email;
+      const likeList = await likesCollection.find({ email: email }).toArray();
+      if (!likeList) {
+        res.send({ message: "likes not found" });
+      }
+      const ids = likeList.map((item) => item.userId);
+      const query = { _id: { $in: ids.map((id) => new ObjectId(id)) } };
+      const result = await usersCollection.find(query).toArray();
       res.send(result);
     });
 
