@@ -98,6 +98,19 @@ async function run() {
       res.send(result);
     });
 
+    // ===========update a user role===============
+    app.put("/users/role/:email", async (req, res) => {
+      const email = req.params.email;
+      const role = req.body;
+      const query = { email: email };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: { role: role },
+      };
+      const result = await usersCollection.updateOne(query, updateDoc, options);
+      res.send(result);
+    });
+
     // ================= love stories get================
     app.get("/loveStories", async (req, res) => {
       const result = await loveStoriesCollection.find().toArray();
@@ -282,6 +295,21 @@ async function run() {
       res.send(result);
     });
 
+    // ==========get favorite list using email=========
+    app.get("/favoriteList/:email", async (req, res) => {
+      const email = req.params.email;
+      const favoriteList = await favoritesCollection
+        .find({ email: email })
+        .toArray();
+      if (!favoriteList) {
+        res.send({ message: "favorites not found" });
+      }
+      const ids = favoriteList.map((item) => item.userId);
+      const query = { _id: { $in: ids.map((id) => new ObjectId(id)) } };
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // =========likes==========
     app.put("/updateLikes/:id", async (req, res) => {
       const userInfo = req.body;
@@ -338,10 +366,28 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/likesList/:email", async (req, res) => {
+      const email = req.params.email;
+      const likeList = await likesCollection.find({ email: email }).toArray();
+      if (!likeList) {
+        res.send({ message: "likes not found" });
+      }
+      const ids = likeList.map((item) => item.userId);
+      const query = { _id: { $in: ids.map((id) => new ObjectId(id)) } };
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // ==========Contact Us==========
     app.post("/contact-us", async (req, res) => {
       const contactInfo = req.body;
       const result = await notesCollection.insertOne(contactInfo);
+      res.send(result);
+    });
+
+    // ======== get notes api =============
+    app.get("/contact-us", async (req, res) => {
+      const result = await notesCollection.find().toArray();
       res.send(result);
     });
 
@@ -364,25 +410,25 @@ async function run() {
       res.send(result);
     });
 
-    //
+    //=======post blogs==========
     app.post("/blogs", async (req, res) => {
       const blogData = req.body;
       const result = await blogsCollection.insertOne(blogData);
       res.send(result);
     });
 
+    // ===========get all blogs===============
     app.get("/blogs", async (req, res) => {
-      try {
-        await client.connect();
-        const db = client.db("chemistryCorner");
-        const collection = db.collection("blogs");
+      const result = await blogsCollection.find().toArray();
+      res.send(result);
+    });
 
-        const blogs = await collection.find().toArray();
-        res.status(200).json(blogs);
-      } catch (error) {
-        console.error("Error fetching blogs:", error);
-        res.status(200).json({ message: "Success", data: result });
-      }
+    // ======get a blog by id============
+    app.get("/blog/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await blogsCollection.findOne(query);
+      res.send(result);
     });
 
     await client.db("admin").command({ ping: 1 });
