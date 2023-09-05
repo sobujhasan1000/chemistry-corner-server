@@ -98,19 +98,6 @@ async function run() {
       res.send(result);
     });
 
-    // ===========update a user role===============
-    app.put("/users/role/:email", async (req, res) => {
-      const email = req.params.email;
-      const role = req.body;
-      const query = { email: email };
-      const options = { upsert: true };
-      const updateDoc = {
-        $set: { role: role },
-      };
-      const result = await usersCollection.updateOne(query, updateDoc, options);
-      res.send(result);
-    });
-
     // ================= love stories get================
     app.get("/loveStories", async (req, res) => {
       const result = await loveStoriesCollection.find().toArray();
@@ -137,7 +124,6 @@ async function run() {
       { location: "userLocation" }
     );
     app.get("/usersSearchByLocation/:text", async (req, res) => {
-      const searchText = req.params.text;
       const result = await usersCollection
         .find({
           $or: [{ country: { $regex: searchText, $options: "i" } }],
@@ -267,6 +253,12 @@ async function run() {
       });
     });
 
+    // ==============get payment =================
+    app.get("/payments", async (req, res) => {
+      const result = await ordersCollection.find().toArray();
+      res.send(result);
+    });
+
     // ============add to favorite=============
     app.post("/favorites", async (req, res) => {
       const favInfo = req.body;
@@ -292,21 +284,6 @@ async function run() {
         query = { email: email };
       }
       const result = await favoritesCollection.find(query).toArray();
-      res.send(result);
-    });
-
-    // ==========get favorite list using email=========
-    app.get("/favoriteList/:email", async (req, res) => {
-      const email = req.params.email;
-      const favoriteList = await favoritesCollection
-        .find({ email: email })
-        .toArray();
-      if (!favoriteList) {
-        res.send({ message: "favorites not found" });
-      }
-      const ids = favoriteList.map((item) => item.userId);
-      const query = { _id: { $in: ids.map((id) => new ObjectId(id)) } };
-      const result = await usersCollection.find(query).toArray();
       res.send(result);
     });
 
@@ -387,12 +364,6 @@ async function run() {
       res.send(result);
     });
 
-    // ======== get notes api =============
-    app.get("/contact-us", async (req, res) => {
-      const result = await notesCollection.find().toArray();
-      res.send(result);
-    });
-
     // ======== get and post newsletter api =============
     app.post("/newsletter", async (req, res) => {
       const newsletter = req.body;
@@ -412,25 +383,25 @@ async function run() {
       res.send(result);
     });
 
-    //=======post blogs==========
+    //
     app.post("/blogs", async (req, res) => {
       const blogData = req.body;
       const result = await blogsCollection.insertOne(blogData);
       res.send(result);
     });
 
-    // ===========get all blogs===============
     app.get("/blogs", async (req, res) => {
-      const result = await blogsCollection.find().toArray();
-      res.send(result);
-    });
+      try {
+        await client.connect();
+        const db = client.db("chemistryCorner");
+        const collection = db.collection("blogs");
 
-    // ======get a blog by id============
-    app.get("/blog/:id", async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: new ObjectId(id) };
-      const result = await blogsCollection.findOne(query);
-      res.send(result);
+        const blogs = await collection.find().toArray();
+        res.status(200).json(blogs);
+      } catch (error) {
+        console.error("Error fetching blogs:", error);
+        res.status(200).json({ message: "Success", data: result });
+      }
     });
 
     await client.db("admin").command({ ping: 1 });
