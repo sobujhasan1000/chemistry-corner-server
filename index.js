@@ -343,6 +343,20 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/likesList/:id", async (req, res) => {
+      const id = req.params.id;
+      const likeList = await likesCollection.find({ userId: id }).toArray();
+      if (!likeList) {
+        res.send({ message: "likes not found" });
+      }
+      const emails = likeList.map((item) => item.email);
+      const query = {
+        email: { $in: emails.map((email) => email) },
+      };
+      const result = await usersCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // ==========Contact Us==========
     app.post("/contact-us", async (req, res) => {
       const contactInfo = req.body;
