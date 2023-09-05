@@ -366,14 +366,16 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/likesList/:email", async (req, res) => {
-      const email = req.params.email;
-      const likeList = await likesCollection.find({ email: email }).toArray();
+    app.get("/likesList/:id", async (req, res) => {
+      const id = req.params.id;
+      const likeList = await likesCollection.find({ userId: id }).toArray();
       if (!likeList) {
         res.send({ message: "likes not found" });
       }
-      const ids = likeList.map((item) => item.userId);
-      const query = { _id: { $in: ids.map((id) => new ObjectId(id)) } };
+      const emails = likeList.map((item) => item.email);
+      const query = {
+        email: { $in: emails.map((email) => email) },
+      };
       const result = await usersCollection.find(query).toArray();
       res.send(result);
     });
