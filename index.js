@@ -77,6 +77,23 @@ async function run() {
       res.send(result);
     });
 
+    // ==========update user role==========
+    app.put("/user-role/:id", async (req, res) => {
+      const id = req.params.id;
+      const role = req.body;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $set: role,
+      };
+      const result = await usersCollection.updateOne(
+        query,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
+
     // ========get all users api============
     app.get("/users", async (req, res) => {
       let query = {};
