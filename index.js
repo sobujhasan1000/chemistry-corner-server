@@ -276,6 +276,15 @@ async function run() {
       res.send(result);
     });
 
+    // ============get a single payment========
+    app.get("/single-payment/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email, paidStatus: true };
+      const options = { sort: { orderTime: -1 } };
+      const result = await ordersCollection.findOne(query, options);
+      res.send(result);
+    });
+
     // ============add to favorite=============
     app.post("/favorites", async (req, res) => {
       const favInfo = req.body;
@@ -301,6 +310,21 @@ async function run() {
         query = { email: email };
       }
       const result = await favoritesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // ==========get favorite list using email=========
+    app.get("/favoriteList/:email", async (req, res) => {
+      const email = req.params.email;
+      const favoriteList = await favoritesCollection
+        .find({ email: email })
+        .toArray();
+      if (!favoriteList) {
+        res.send({ message: "favorites not found" });
+      }
+      const ids = favoriteList.map((item) => item.userId);
+      const query = { _id: { $in: ids.map((id) => new ObjectId(id)) } };
+      const result = await usersCollection.find(query).toArray();
       res.send(result);
     });
 
