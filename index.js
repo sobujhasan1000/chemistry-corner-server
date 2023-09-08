@@ -135,9 +135,10 @@ async function run() {
     // ==========index for search by locations=========
     const result2 = await usersCollection.createIndex(
       { country: 1 },
-      { country: "userLocation" }
+      { country: "country" }
     );
     app.get("/usersSearchByLocation/:text", async (req, res) => {
+      const searchText = req.params.text;
       const result = await usersCollection
         .find({
           $or: [{ country: { $regex: searchText, $options: "i" } }],
