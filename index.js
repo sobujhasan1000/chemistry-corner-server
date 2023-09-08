@@ -168,7 +168,7 @@ async function run() {
       if (req.query.minAge && req.query.maxAge) {
         query.age = { $gte: minAge, $lte: maxAge };
       }
-      if (req.query.location) {
+      if (req.query.country) {
         query.country = country;
       }
       const result = await usersCollection.find(query).toArray();
