@@ -35,9 +35,6 @@ async function run() {
     const loveStoriesCollection = client
       .db("chemistryCorner")
       .collection("loveStories");
-    const membersCollection = client
-      .db("chemistryCorner")
-      .collection("members");
     const notesCollection = client.db("chemistryCorner").collection("notes");
     const favoritesCollection = client
       .db("chemistryCorner")
@@ -124,7 +121,7 @@ async function run() {
     // =========index for search by name in members==========
     const indexKeys = { name: 1 };
     const indexOptions = { name: "userName" };
-    const result = await membersCollection.createIndex(indexKeys, indexOptions);
+    const result = await usersCollection.createIndex(indexKeys, indexOptions);
     app.get("/usersSearchByName/:text", async (req, res) => {
       const searchText = req.params.text;
       const result = await usersCollection
@@ -136,9 +133,9 @@ async function run() {
     });
 
     // ==========index for search by locations=========
-    const result2 = await membersCollection.createIndex(
-      { location: 1 },
-      { location: "userLocation" }
+    const result2 = await usersCollection.createIndex(
+      { country: 1 },
+      { country: "userLocation" }
     );
     app.get("/usersSearchByLocation/:text", async (req, res) => {
       const result = await usersCollection
@@ -149,12 +146,12 @@ async function run() {
       res.send(result);
     });
 
-    // =============index for complex search  (simanto 1)==============
-    const result3 = await membersCollection.createIndex(
+    // =============index for complex search ==============
+    const result3 = await usersCollection.createIndex(
       { age: 1 },
       { age: "age" }
     );
-    const result4 = await membersCollection.createIndex(
+    const result4 = await usersCollection.createIndex(
       { gender: 1 },
       { gender: "gender" }
     );
