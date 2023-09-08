@@ -438,17 +438,15 @@ async function run() {
     });
 
     app.get("/blogs", async (req, res) => {
-      try {
-        await client.connect();
-        const db = client.db("chemistryCorner");
-        const collection = db.collection("blogs");
+      const result = await blogsCollection.find().toArray();
+      res.send(result);
+    });
 
-        const blogs = await collection.find().toArray();
-        res.status(200).json(blogs);
-      } catch (error) {
-        console.error("Error fetching blogs:", error);
-        res.status(200).json({ message: "Success", data: result });
-      }
+    app.get("/blog/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await blogsCollection.findOne(query);
+      res.send(result);
     });
 
     await client.db("admin").command({ ping: 1 });
