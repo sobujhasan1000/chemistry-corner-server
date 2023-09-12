@@ -1,13 +1,33 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const SSLCommerzPayment = require("sslcommerz-lts");
 const app = express();
 // const multer = require("multer");
 const cors = require("cors");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
+const CONNECTION = process.env.MONGODB_CONNECTION;
+const ChatRoute = require("./Routes/ChatRoutes.js");
+const MessageRoute = require("./Routes/MessageRoute.js");
+
 // ================= middleware =====================
 app.use(cors());
 app.use(express.json());
+
+mongoose
+  .connect(CONNECTION, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => {
+    // Start the Express app after successfully connecting to MongoDB
+    // app.listen(port, () => {
+    //   console.log(`Listening at Port ${port}`);
+    // });
+  })
+  .catch((error) => {
+    console.error(`${error} did not connect`);
+  });
+
+app.use("/chat", ChatRoute);
+app.use("/message", MessageRoute);
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.zjphxo3.mongodb.net/?retryWrites=true&w=majority`;
