@@ -1,5 +1,5 @@
 const io = require("socket.io")(8800, {
-  cors: { origin: "http://localhost:5173" },
+  cors: { origin: `${process.env.CLIENT_API_URL}` },
 });
 
 let activeUsers = [];
