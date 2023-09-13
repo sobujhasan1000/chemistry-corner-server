@@ -1,5 +1,6 @@
-const io = require("socket.io")(8800, {
-  cors: { origin: `${process.env.CLIENT_API_URL}` },
+const port = process.env.PORT || 8800;
+const io = require("socket.io")(port, {
+  cors: { origin: "https://chemistry-corner-client.web.app" },
 });
 
 let activeUsers = [];
