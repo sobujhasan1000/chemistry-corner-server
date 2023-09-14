@@ -1,6 +1,6 @@
 const port = process.env.PORT || 8800;
 const io = require("socket.io")(port, {
-  cors: { origin: "http://localhost:5173" },
+  cors: { origin: "https://chemistry-corner-server.up.railway.app" },
 });
 
 let activeUsers = [];
