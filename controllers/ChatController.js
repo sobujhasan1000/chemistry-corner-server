@@ -7,8 +7,13 @@ exports.createChat = async (req, res) => {
   });
 
   try {
-    const result = await newChat.save();
-    res.status(200).json(result);
+    const findResult = await ChatModel.findOne({
+      members: { $all: [req.body.senderId, req.body.receiverId] },
+    });
+    if (!findResult) {
+      const result = await newChat.save();
+      res.status(200).json(result);
+    }
   } catch (error) {
     res.status(500).json(error);
   }
