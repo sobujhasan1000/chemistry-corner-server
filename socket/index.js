@@ -1,3 +1,5 @@
+const express = require("express");
+const app = express();
 const port = process.env.PORT || 8800;
 const io = require("socket.io")(port, {
   cors: { origin: "https://chemistry-corner-server.up.railway.app" },
@@ -35,4 +37,12 @@ io.on("connection", (socket) => {
     console.log("users disconnected", activeUsers);
     io.emit("get-users", activeUsers);
   });
+});
+
+app.get("/", (req, res) => {
+  res.send("chemistry corner socket server is running");
+});
+
+app.listen(port, () => {
+  console.log(`chemistry corner socket server is running on port ☣️ ${port}`);
 });
