@@ -2,7 +2,7 @@
 // const app = express();
 const port = process.env.PORT || 8800;
 const io = require("socket.io")(port, {
-  cors: { origin: "https://chemistry-corner-server.up.railway.app" },
+  cors: { origin: "http://localhost:5173" },
 });
 
 let activeUsers = [];

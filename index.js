@@ -132,6 +132,15 @@ async function run() {
       res.send(result);
     });
 
+    // ==============delete a user===============
+    app.delete("/user/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: new ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    });
+
     // ================= love stories get================
     app.get("/loveStories", async (req, res) => {
       const result = await loveStoriesCollection.find().toArray();
