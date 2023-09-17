@@ -360,7 +360,7 @@ async function run() {
     });
 
     //========get favorite using email=======
-    app.get("/favorites", verifyJWT, async (req, res) => {
+    app.get("/favorites", async (req, res) => {
       let query = {};
       const email = req.query.email;
       if (req.query.email) {
@@ -371,8 +371,14 @@ async function run() {
     });
 
     // ==========get favorite list using email=========
-    app.get("/favoriteList/:email", async (req, res) => {
+    app.get("/favoriteList/:email", verifyJWT, async (req, res) => {
+      const decodedEmail = req.decoded.email;
       const email = req.params.email;
+      if (decodedEmail !== email) {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden access" });
+      }
       const favoriteList = await favoritesCollection
         .find({ email: email })
         .toArray();
