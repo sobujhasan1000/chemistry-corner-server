@@ -4,6 +4,7 @@ const SSLCommerzPayment = require("sslcommerz-lts");
 const app = express();
 // const multer = require("multer");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const port = process.env.PORT || 5000;
 const CONNECTION = process.env.MONGODB_CONNECTION;
@@ -45,6 +46,27 @@ const store_id = process.env.STORE_ID;
 const store_passwd = process.env.STORE_PASS;
 const is_live = false; //true for live, false for sandbox
 
+const verifyJWT = (req, res, next) => {
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res
+      .status(401)
+      .send({ error: true, message: "unauthorized access" });
+  }
+  // bearer token
+  const token = authorization.split(" ")[1];
+
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res
+        .status(401)
+        .send({ error: true, message: "unauthorized access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+};
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -68,6 +90,15 @@ async function run() {
     const feedbackCollection = client
       .db("chemistryCorner")
       .collection("feedbacks");
+
+    // generate jwt token
+    app.post("/jwt", async (req, res) => {
+      const email = req.body;
+      const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send({ token });
+    });
 
     // ==============users db create====================
     app.post("/users", async (req, res) => {
@@ -135,7 +166,6 @@ async function run() {
     // ==============delete a user===============
     app.delete("/user/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
       const query = { _id: new ObjectId(id) };
       const result = await usersCollection.deleteOne(query);
       res.send(result);
@@ -330,7 +360,7 @@ async function run() {
     });
 
     //========get favorite using email=======
-    app.get("/favorites", async (req, res) => {
+    app.get("/favorites", verifyJWT, async (req, res) => {
       let query = {};
       const email = req.query.email;
       if (req.query.email) {
