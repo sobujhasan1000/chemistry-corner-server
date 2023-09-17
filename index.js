@@ -12,7 +12,12 @@ const ChatRoute = require("./Routes/ChatRoutes.js");
 const MessageRoute = require("./Routes/MessageRoute.js");
 
 // ================= middleware =====================
-app.use(cors());
+const corsOptions = {
+  origin: "*",
+  credentials: true,
+  optionSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 mongoose
