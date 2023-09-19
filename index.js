@@ -147,6 +147,25 @@ async function run() {
       res.send(result);
     });
 
+    // =======update a user photos==========
+    app.put("/user-photos/:id", async (req, res) => {
+      const id = req.params.id;
+      const photoUrls = req.body;
+      const query = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+        $push: {
+          photos: { $each: photoUrls },
+        },
+      };
+      const result = await usersCollection.updateOne(
+        query,
+        updatedDoc,
+        options
+      );
+      res.send(result);
+    });
+
     // ========get all users api============
     app.get("/users", async (req, res) => {
       let query = {};
